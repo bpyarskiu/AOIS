@@ -286,18 +286,18 @@ class BinaryNumber:
         if not isinstance(other, BinaryNumber):
             other = BinaryNumber(other)
 
-        # Проверка деления на ноль
+        
         if other.value == 0:
             raise ZeroDivisionError("Деление на ноль!")
 
-        # Используем прямой код для работы с модулями
+        
         self_straight = self.to_code("straight")
         other_straight = other.to_code("straight")
 
         # Определяем знак результата
         sign = "0" if self_straight.binary[0] == other_straight.binary[0] else "1"
 
-        # Берем модули (убираем знаковый бит и преобразуем в числа)
+        
         dividend_abs = self_straight.value
         divisor_abs = other_straight.value
 

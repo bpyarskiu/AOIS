@@ -1,4 +1,4 @@
-# from binary_number import BinaryNumber
+from binary_number import BinaryNumber
 
 
 class BinaryFloat:
@@ -41,7 +41,7 @@ class BinaryFloat:
                 exponent -= 1
 
         # Получаем мантиссу (23 бита)
-        num -= 1.0  # Убираем целую часть (она всегда 1)
+        num -= 1.0
         mantissa = []
         for _ in range(23):
             num *= 2.0
@@ -191,12 +191,12 @@ class BinaryFloat:
         """Сложение двух чисел IEEE-754"""
         if not isinstance(other, BinaryFloat):
             other = BinaryFloat(other)
-        
+
         print(f"\nСЛОЖЕНИЕ IEEE-754:")
         print(f"  {self.binary}  ({self.value})")
         print(f"+ {other.binary}  ({other.value})")
         print("-" * 50)
-        
+
         # Извлекаем компоненты
         sign1 = self.binary[0]
         sign2 = other.binary[0]
@@ -204,32 +204,32 @@ class BinaryFloat:
         exp2 = other.binary[1:9]
         mant1 = self.binary[9:]
         mant2 = other.binary[9:]
-        
+
         # Проверка на нули
-        if exp1 == '0' * 8 and mant1 == '0' * 23:
+        if exp1 == "0" * 8 and mant1 == "0" * 23:
             return other
-        if exp2 == '0' * 8 and mant2 == '0' * 23:
+        if exp2 == "0" * 8 and mant2 == "0" * 23:
             return self
-        
+
         # Добавляем скрытую единицу к мантиссе
-        mant1_full = '1' + mant1
-        mant2_full = '1' + mant2
-        
+        mant1_full = "1" + mant1
+        mant2_full = "1" + mant2
+
         print(f"  Мантисса 1: {mant1_full}")
         print(f"  Мантисса 2: {mant2_full}")
         print(f"  Порядок 1: {exp1} = {int(exp1, 2)}")
         print(f"  Порядок 2: {exp2} = {int(exp2, 2)}")
-        
+
         # Выравнивание порядков
         exp, e, mant1_aligned, mant2_aligned = self._align_exponents(
             exp1, mant1_full, exp2, mant2_full
         )
-        
+
         print(f"  После выравнивания:")
         print(f"    Мантисса 1: {mant1_aligned}")
         print(f"    Мантисса 2: {mant2_aligned}")
         print(f"    Порядок: {exp} = {e}")
-        
+
         # Определяем операцию на основе знаков
         if sign1 == sign2:
             # Одинаковые знаки - складываем мантиссы
@@ -251,16 +251,16 @@ class BinaryFloat:
                 # Мантиссы равны - результат 0
                 print(f"  Мантиссы равны - результат 0")
                 return BinaryFloat(0.0)
-        
+
         # Нормализация результата
-        if mant_sum[0] == '1' and len(mant_sum) > 24:
+        if mant_sum[0] == "1" and len(mant_sum) > 24:
             # Есть перенос в целую часть
             mant_sum = mant_sum[1:]  # Убираем старший бит
             e += 1
             print(f"  Перенос: порядок увеличен до {e}")
         else:
             # Убираем ведущие нули
-            first_one = mant_sum.find('1')
+            first_one = mant_sum.find("1")
             if first_one > 0:
                 mant_sum = mant_sum[first_one:]
                 e -= first_one
@@ -268,20 +268,20 @@ class BinaryFloat:
             elif first_one == -1:
                 # Все нули
                 return BinaryFloat(0.0)
-        
+
         # Получаем 23-битную мантиссу (убираем скрытую единицу)
         if len(mant_sum) > 23:
             mant_result = mant_sum[1:24]  # Убираем скрытую единицу
         elif len(mant_sum) == 24:
             mant_result = mant_sum[1:]  # Убираем скрытую единицу
         else:
-            mant_result = mant_sum[1:].ljust(23, '0')
-        
+            mant_result = mant_sum[1:].ljust(23, "0")
+
         # Преобразуем порядок в двоичный вид
         if e <= 0:
-            exp_result = '0' * 8  # Денормализованное число
+            exp_result = "0" * 8  # Денормализованное число
         elif e >= 255:
-            exp_result = '1' * 8  # Бесконечность
+            exp_result = "1" * 8  # Бесконечность
         else:
             # Порядок в двоичный
             exp_parts = []
@@ -289,16 +289,16 @@ class BinaryFloat:
             while temp > 0:
                 exp_parts.append(str(temp % 2))
                 temp = temp // 2
-            exp_result = ''.join(reversed(exp_parts))
+            exp_result = "".join(reversed(exp_parts))
             exp_result = exp_result.zfill(8)
-        
+
         result_binary = result_sign + exp_result + mant_result
         result_value = self.ieee754_to_float(result_binary)
-        
+
         print(f"\n  Результат:")
         print(f"  {result_binary}")
         print(f"  = {result_value}")
-        
+
         return BinaryFloat(result_binary)
 
     def __sub__(self, other):
@@ -330,7 +330,6 @@ class BinaryFloat:
         mant1 = self.binary[9:]
         mant2 = other.binary[9:]
 
-        # Знак результата (XOR)
         result_sign = "0" if sign1 == sign2 else "1"
 
         # Порядки складываются (с учетом смещения 127)
@@ -338,27 +337,51 @@ class BinaryFloat:
         e2 = int(exp2, 2)
         e_result = e1 + e2 - 127
 
-        # Мантиссы умножаются (со скрытой единицей)
         mant1_full = "1" + mant1
         mant2_full = "1" + mant2
 
-        # Преобразуем в целые числа для умножения (для простоты)
-        # В реальной реализации нужно двоичное умножение
-        m1 = int(mant1_full, 2)
-        m2 = int(mant2_full, 2)
-        m_result = m1 * m2
+        # Умножение мантисс как двоичных строк (адаптировано из BinaryNumber._binary_multiply)
+        len1, len2 = len(mant1_full), len(mant2_full)
 
-        print(f"  Мантисса 1: {mant1_full} = {m1}")
-        print(f"  Мантисса 2: {mant2_full} = {m2}")
-        print(f"  Произведение мантисс: {m_result}")
+        # Сдвигаем и складываем
+        results = []
+        for i in range(len2 - 1, -1, -1):
+            if mant2_full[i] == "1":
+                shifted = mant1_full + "0" * (len2 - 1 - i)
+                results.append(shifted)
+
+        if not results:
+            m_result = "0" * (len1 + len2)
+        else:
+            # Сложение двоичных строк (адаптировано)
+            result = results[0]
+            for i in range(1, len(results)):
+                # Сложение двух двоичных строк
+                bin1, bin2 = result, results[i]
+                max_len = max(len(bin1), len(bin2))
+                bin1 = bin1.zfill(max_len)
+                bin2 = bin2.zfill(max_len)
+
+                carry = 0
+                binary_sum = []
+                for j in range(max_len - 1, -1, -1):
+                    bit_sum = int(bin1[j]) + int(bin2[j]) + carry
+                    binary_sum.append(str(bit_sum % 2))
+                    carry = bit_sum // 2
+                if carry:
+                    binary_sum.append("1")
+                result = "".join(reversed(binary_sum))
+            m_result = result
+
+        # Преобразуем в целое число для проверки переполнения
+        m_result_int = int(m_result, 2)
 
         # Нормализация
-        if m_result >= (1 << 47):  # Если результат >= 2^47
-            m_result >>= 1
+        if m_result_int >= (1 << 47):
+            m_result_int >>= 1
             e_result += 1
 
-        # Преобразуем обратно в двоичную мантиссу (23 бита)
-        mant_result = bin(m_result)[2:].zfill(47)[1:24]  # Убираем скрытую единицу
+        mant_result = bin(m_result_int)[2:].zfill(47)[1:24] 
 
         # Порядок в двоичный
         if e_result <= 0:
@@ -382,6 +405,88 @@ class BinaryFloat:
         print(f"  = {result_value}")
 
         return BinaryFloat(result_binary)
+
+    # def __mul__(self, other):
+    #     """Умножение чисел IEEE-754"""
+    #     if not isinstance(other, BinaryFloat):
+    #         other = BinaryFloat(other)
+
+    #     print(f"\nУМНОЖЕНИЕ IEEE-754:")
+    #     print(f"  {self.binary}  ({self.value})")
+    #     print(f"* {other.binary}  ({other.value})")
+    #     print("-" * 50)
+
+    #     # Извлекаем компоненты
+    #     sign1 = self.binary[0]
+    #     sign2 = other.binary[0]
+    #     exp1 = self.binary[1:9]
+    #     exp2 = other.binary[1:9]
+    #     mant1 = self.binary[9:]
+    #     mant2 = other.binary[9:]
+
+    #     result_sign = "0" if sign1 == sign2 else "1"
+
+    #     # Порядки складываются (с учетом смещения 127)
+    #     e1 = int(exp1, 2)
+    #     e2 = int(exp2, 2)
+    #     e_result = e1 + e2 - 127
+
+    #     # Формируем полные мантиссы с ведущей единицей (24 бита)
+    #     mant1_full = "1" + mant1  # 24 бита
+    #     mant2_full = "1" + mant2  # 24 бита
+
+    #     print(f"  Мантисса 1 (полная): {mant1_full}")
+    #     print(f"  Мантисса 2 (полная): {mant2_full}")
+
+    #     # Умножаем мантиссы как двоичные строки с помощью метода из BinaryNumber
+    #     # Результат умножения двух 24-битных чисел дает до 48 бит
+    #     mant_product = BinaryNumber._binary_multiply(mant1_full, mant2_full)
+
+    #     print(f"  Произведение мантисс (двоичное): {mant_product}")
+    #     print(f"  Длина произведения: {len(mant_product)} бит")
+
+    #     # Нормализуем результат умножения мантисс
+    #     # Так как умножаем два числа вида 1.xxx, результат в диапазоне [1, 4)
+    #     # В двоичном виде это от 1.0 до 11.111...
+    #     mant_result, exp_adjust = self._normalize_result(mant_product, e_result)
+
+    #     # Обновляем порядок с учетом нормализации
+    #     e_result = exp_adjust
+
+    #     print(f"  После нормализации мантисса: {mant_result}")
+    #     print(f"  Скорректированный порядок: {e_result}")
+
+    #     # Преобразуем порядок в двоичный с проверкой границ
+    #     if e_result <= 0:
+    #         # Денормализованное число или ноль
+    #         if e_result <= -23:
+    #             # Слишком маленькое число - ноль
+    #             exp_result = "0" * 8
+    #             mant_result = "0" * 23
+    #         else:
+    #             # Денормализованное число
+    #             exp_result = "0" * 8
+    #             # Сдвигаем мантиссу вправо на |e_result| бит
+    #             shift = -e_result
+    #             mant_int = int(mant_result, 2) if mant_result else 0
+    #             mant_int >>= shift
+    #             mant_result = bin(mant_int)[2:].zfill(23)[-23:]
+    #     elif e_result >= 255:
+    #         # Переполнение - бесконечность
+    #         exp_result = "1" * 8
+    #         mant_result = "0" * 23
+    #     else:
+    #         # Нормализованное число
+    #         exp_result = bin(e_result)[2:].zfill(8)
+
+    #     result_binary = result_sign + exp_result + mant_result
+    #     result_value = self.ieee754_to_float(result_binary)
+
+    #     print(f"\n  Результат:")
+    #     print(f"  {result_binary}")
+    #     print(f"  = {result_value}")
+
+    #     return BinaryFloat(result_binary)
 
     def __truediv__(self, other):
         """Деление чисел IEEE-754"""
@@ -442,7 +547,7 @@ class BinaryFloat:
                 temp = temp // 2
             exp_result = "".join(reversed(exp_parts))
             exp_result = exp_result.zfill(8)
-
+        mant_result, exp_result = _normalize_result(mant_result, exp_result)
         result_binary = result_sign + exp_result + mant_result
         result_value = self.ieee754_to_float(result_binary)
 

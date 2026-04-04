@@ -237,24 +237,9 @@ class BCDExcess3:
             a_digit = a_val - 3
             b_digit = b_val - 3
 
-            print(
-                f"\n  Тетрада {nibble_idx} (позиция {self.MAX_DIGITS-1-nibble_idx} справа):"
-            )
-            print(
-                f"    {self._nibble_to_str(a_nibble)} (Excess-3: {a_val:2d} -> цифра {a_digit})"
-            )
-            print(
-                f"  + {self._nibble_to_str(b_nibble)} (Excess-3: {b_val:2d} -> цифра {b_digit})"
-            )
-            print(f"  + перенос: {carry}")
-
             # 1. Двоичное сложение тетрад с учетом переноса
             raw_sum, nibble_carry = self._add_nibbles(a_nibble, b_nibble, carry)
             raw_sum_val = self._nibble_bits_to_int(raw_sum)
-
-            print(
-                f"    Сумма (двоичная): {self._nibble_to_str(raw_sum)} = {raw_sum_val:2d}"
-            )
 
             # 2. Excess-3 коррекция
             if nibble_carry == 1:
@@ -262,9 +247,7 @@ class BCDExcess3:
                 # Коррекция: прибавляем 3
                 corrected, _ = self._add_nibbles(raw_sum, self.CORRECTION, 0)
                 carry = 1
-                print(
-                    f"    Есть перенос -> +3 коррекция: {self._nibble_to_str(corrected)}"
-                )
+               
             else:
                 # Не было переноса - значит сумма цифр < 10
                 # Коррекция: вычитаем 3
@@ -273,18 +256,13 @@ class BCDExcess3:
                     raise ValueError(f"Ошибка коррекции: {raw_sum_val} < 3")
                 corrected, _ = self._subtract_nibbles(raw_sum, self.CORRECTION, 0)
                 carry = 0
-                print(
-                    f"    Нет переноса -> -3 коррекция: {self._nibble_to_str(corrected)}"
-                )
+               
 
             # 3. Сохраняем результат
             result_bits[start : start + self.BITS_PER_DIGIT] = corrected
             corrected_val = self._nibble_bits_to_int(corrected)
             corrected_digit = corrected_val - 3
-            print(
-                f"    Результат: {self._nibble_to_str(corrected)} (Excess-3: {corrected_val:2d} -> цифра {corrected_digit})"
-            )
-            print(f"    Новый перенос: {carry}")
+            
 
         # Проверка на переполнение
         overflow = carry == 1
