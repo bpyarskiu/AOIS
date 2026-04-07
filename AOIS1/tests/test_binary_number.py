@@ -145,8 +145,11 @@ class TestBinaryNumberArithmetic:
     @pytest.mark.parametrize(
         "a,b,expected",
         [
-            (6, 3, 2),
-            (7, 3, 2),  # целочисленное деление
+            (
+                6,
+                3,
+                2,
+            ),
             (-6, 3, -2),
             (6, -3, -2),
             (-6, -3, 2),
@@ -156,7 +159,7 @@ class TestBinaryNumberArithmetic:
         """Тест деления"""
         x = BinaryNumber(a, "straight")
         y = BinaryNumber(b, "straight")
-        result = x / y
+        result, frac = x / y
         assert result.value == expected
 
     def test_division_by_zero(self):

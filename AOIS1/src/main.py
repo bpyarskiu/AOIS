@@ -168,9 +168,8 @@ class BinaryCalculatorConsole:
                     code2 = self.get_code_type()
                     num2 = BinaryNumber(val2, code2)
                     try:
-                        result = num / num2
+                        result, frac = num / num2
                         op_str = f"{num.value} / {num2.value} = {result.value}"
-                        print(f"\n   Результат (целая часть): {result}")
                         self.add_to_history(op_str, result)
                     except ZeroDivisionError:
                         print("\n  Ошибка: деление на ноль!")

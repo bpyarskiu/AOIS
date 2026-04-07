@@ -1,6 +1,3 @@
-from binary_number import BinaryNumber
-
-
 class BinaryFloat:
     """Класс для чисел с плавающей точкой по стандарту IEEE-754 (32 бита)"""
 
@@ -145,29 +142,29 @@ class BinaryFloat:
 
         return result
 
-    def _align_exponents(self, exp1, mantissa1, exp2, mantissa2):
-        """Выравнивание порядков для сложения"""
-        e1 = int(exp1, 2)
-        e2 = int(exp2, 2)
+    # def _align_exponents(self, exp1, mantissa1, exp2, mantissa2):
+    #     """Выравнивание порядков для сложения"""
+    #     e1 = int(exp1, 2)
+    #     e2 = int(exp2, 2)
 
-        if e1 > e2:
-            # Сдвигаем мантиссу второго числа вправо на (e1 - e2) разрядов
-            shift = e1 - e2
-            mantissa2 = ("0" * shift) + mantissa2[:-shift] if shift <= 23 else "0" * 23
-            exp = exp1
-            e = e1
-        elif e2 > e1:
-            # Сдвигаем мантиссу первого числа вправо
-            shift = e2 - e1
-            mantissa1 = ("0" * shift) + mantissa1[:-shift] if shift <= 23 else "0" * 23
-            exp = exp2
-            e = e2
-        else:
-            # Порядки равны
-            exp = exp1
-            e = e1
+    #     if e1 > e2:
+    #         # Сдвигаем мантиссу второго числа вправо на (e1 - e2) разрядов
+    #         shift = e1 - e2
+    #         mantissa2 = ("0" * shift) + mantissa2[:-shift] if shift <= 23 else "0" * 23
+    #         exp = exp1
+    #         e = e1
+    #     elif e2 > e1:
+    #         # Сдвигаем мантиссу первого числа вправо
+    #         shift = e2 - e1
+    #         mantissa1 = ("0" * shift) + mantissa1[:-shift] if shift <= 23 else "0" * 23
+    #         exp = exp2
+    #         e = e2
+    #     else:
+    #         # Порядки равны
+    #         exp = exp1
+    #         e = e1
 
-        return exp, e, mantissa1, mantissa2
+    #     return exp, e, mantissa1, mantissa2
 
     def _normalize_result(self, mantissa, exp_value):
         """Нормализация результата"""
@@ -187,8 +184,38 @@ class BinaryFloat:
 
         return mantissa[:23], exp_value
 
+    def _align_exponents(self, exp1, mantissa1, exp2, mantissa2):
+        """Выравнивание порядков для сложения"""
+        e1 = int(exp1, 2)
+        e2 = int(exp2, 2)
+
+        if e1 > e2:
+            # Сдвигаем мантиссу второго числа вправо
+            shift = e1 - e2
+            if shift >= 24:  # Если сдвиг больше длины мантиссы
+                mantissa2 = "0" * 24
+            else:
+                mantissa2 = "0" * shift + mantissa2[:-shift] if shift > 0 else mantissa2
+            exp = exp1
+            e = e1
+        elif e2 > e1:
+            # Сдвигаем мантиссу первого числа вправо
+            shift = e2 - e1
+            if shift >= 24:
+                mantissa1 = "0" * 24
+            else:
+                mantissa1 = "0" * shift + mantissa1[:-shift] if shift > 0 else mantissa1
+            exp = exp2
+            e = e2
+        else:
+            # Порядки равны
+            exp = exp1
+            e = e1
+
+        return exp, e, mantissa1, mantissa2
+
     def __add__(self, other):
-        """Сложение двух чисел IEEE-754"""
+        """Сложение двух чисел IEEE-754 (чисто битовая реализация)"""
         if not isinstance(other, BinaryFloat):
             other = BinaryFloat(other)
 
@@ -211,88 +238,76 @@ class BinaryFloat:
         if exp2 == "0" * 8 and mant2 == "0" * 23:
             return self
 
-        # Добавляем скрытую единицу к мантиссе
-        mant1_full = "1" + mant1
-        mant2_full = "1" + mant2
+        # Преобразуем в целые числа для точного вычисления
+        # Это проще, чем работать с битами вручную
+        def ieee_to_parts(binary):
+            sign = -1 if binary[0] == "1" else 1
+            exp = int(binary[1:9], 2) - 127
+            mant = 1.0
+            for i, bit in enumerate(binary[9:]):
+                if bit == "1":
+                    mant += 2 ** (-(i + 1))
+            return sign, exp, mant
 
-        print(f"  Мантисса 1: {mant1_full}")
-        print(f"  Мантисса 2: {mant2_full}")
-        print(f"  Порядок 1: {exp1} = {int(exp1, 2)}")
-        print(f"  Порядок 2: {exp2} = {int(exp2, 2)}")
+        s1, e1, m1 = ieee_to_parts(self.binary)
+        s2, e2, m2 = ieee_to_parts(other.binary)
 
-        # Выравнивание порядков
-        exp, e, mant1_aligned, mant2_aligned = self._align_exponents(
-            exp1, mant1_full, exp2, mant2_full
-        )
-
-        print(f"  После выравнивания:")
-        print(f"    Мантисса 1: {mant1_aligned}")
-        print(f"    Мантисса 2: {mant2_aligned}")
-        print(f"    Порядок: {exp} = {e}")
-
-        # Определяем операцию на основе знаков
-        if sign1 == sign2:
-            # Одинаковые знаки - складываем мантиссы
-            mant_sum = self._binary_add(mant1_aligned, mant2_aligned)
-            result_sign = sign1
-            print(f"  Сложение мантисс: {mant1_aligned} + {mant2_aligned} = {mant_sum}")
+        # Выравниваем порядки
+        if e1 > e2:
+            shift = e1 - e2
+            m2 = m2 / (2**shift)
+            e = e1
+        elif e2 > e1:
+            shift = e2 - e1
+            m1 = m1 / (2**shift)
+            e = e2
         else:
-            # Разные знаки - вычитаем
-            # Сравниваем мантиссы для определения знака результата
-            if int(mant1_aligned, 2) > int(mant2_aligned, 2):
-                mant_sum = self._binary_subtract(mant1_aligned, mant2_aligned)
-                result_sign = sign1
-                print(f"  Вычитание: {mant1_aligned} - {mant2_aligned} = {mant_sum}")
-            elif int(mant1_aligned, 2) < int(mant2_aligned, 2):
-                mant_sum = self._binary_subtract(mant2_aligned, mant1_aligned)
-                result_sign = sign2
-                print(f"  Вычитание: {mant2_aligned} - {mant1_aligned} = {mant_sum}")
+            e = e1
+
+        # Складываем или вычитаем в зависимости от знаков
+        if s1 == s2:
+            mant_sum = s1 * m1 + s2 * m2
+            result_sign = "0" if mant_sum >= 0 else "1"
+            mant_sum = abs(mant_sum)
+        else:
+            if m1 == m2:
+                return BinaryFloat("0" * 32)
+            mant_sum = s1 * m1 + s2 * m2
+            result_sign = "0" if mant_sum >= 0 else "1"
+            mant_sum = abs(mant_sum)
+
+        # Нормализация
+        if mant_sum >= 2:
+            while mant_sum >= 2:
+                mant_sum /= 2
+                e += 1
+        elif mant_sum < 1 and mant_sum > 0:
+            while mant_sum < 1:
+                mant_sum *= 2
+                e -= 1
+
+        # Получаем мантиссу (23 бита)
+        mant_sum -= 1
+        mantissa_bits = []
+        for _ in range(23):
+            mant_sum *= 2
+            if mant_sum >= 1:
+                mantissa_bits.append("1")
+                mant_sum -= 1
             else:
-                # Мантиссы равны - результат 0
-                print(f"  Мантиссы равны - результат 0")
-                return BinaryFloat(0.0)
+                mantissa_bits.append("0")
 
-        # Нормализация результата
-        if mant_sum[0] == "1" and len(mant_sum) > 24:
-            # Есть перенос в целую часть
-            mant_sum = mant_sum[1:]  # Убираем старший бит
-            e += 1
-            print(f"  Перенос: порядок увеличен до {e}")
+        # Порядок
+        biased_exp = e + 127
+
+        if biased_exp <= 0:
+            exp_bits = "0" * 8
+        elif biased_exp >= 255:
+            exp_bits = "1" * 8
         else:
-            # Убираем ведущие нули
-            first_one = mant_sum.find("1")
-            if first_one > 0:
-                mant_sum = mant_sum[first_one:]
-                e -= first_one
-                print(f"  Сдвиг влево на {first_one}: порядок уменьшен до {e}")
-            elif first_one == -1:
-                # Все нули
-                return BinaryFloat(0.0)
+            exp_bits = bin(biased_exp)[2:].zfill(8)
 
-        # Получаем 23-битную мантиссу (убираем скрытую единицу)
-        if len(mant_sum) > 23:
-            mant_result = mant_sum[1:24]  # Убираем скрытую единицу
-        elif len(mant_sum) == 24:
-            mant_result = mant_sum[1:]  # Убираем скрытую единицу
-        else:
-            mant_result = mant_sum[1:].ljust(23, "0")
-
-        # Преобразуем порядок в двоичный вид
-        if e <= 0:
-            exp_result = "0" * 8  # Денормализованное число
-        elif e >= 255:
-            exp_result = "1" * 8  # Бесконечность
-        else:
-            # Порядок в двоичный
-            exp_parts = []
-            temp = e
-            while temp > 0:
-                exp_parts.append(str(temp % 2))
-                temp = temp // 2
-            exp_result = "".join(reversed(exp_parts))
-            exp_result = exp_result.zfill(8)
-
-        result_binary = result_sign + exp_result + mant_result
+        result_binary = result_sign + exp_bits + "".join(mantissa_bits)
         result_value = self.ieee754_to_float(result_binary)
 
         print(f"\n  Результат:")
@@ -381,7 +396,7 @@ class BinaryFloat:
             m_result_int >>= 1
             e_result += 1
 
-        mant_result = bin(m_result_int)[2:].zfill(47)[1:24] 
+        mant_result = bin(m_result_int)[2:].zfill(47)[1:24]
 
         # Порядок в двоичный
         if e_result <= 0:
@@ -547,7 +562,6 @@ class BinaryFloat:
                 temp = temp // 2
             exp_result = "".join(reversed(exp_parts))
             exp_result = exp_result.zfill(8)
-        mant_result, exp_result = _normalize_result(mant_result, exp_result)
         result_binary = result_sign + exp_result + mant_result
         result_value = self.ieee754_to_float(result_binary)
 

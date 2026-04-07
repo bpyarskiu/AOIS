@@ -281,57 +281,129 @@ class BinaryNumber:
     def __truediv__(self, other):
         """
         Деление методом последовательного вычитания
-        Возвращает целую часть от деления
+        Возвращает результат с дробной частью (5 бит после запятой)
+
+        Returns:
+            tuple: (BinaryNumber (32 бита для целой части), BinaryNumber (32 бита для дробной части))
         """
         if not isinstance(other, BinaryNumber):
             other = BinaryNumber(other)
 
-        
         if other.value == 0:
             raise ZeroDivisionError("Деление на ноль!")
 
-        
         self_straight = self.to_code("straight")
         other_straight = other.to_code("straight")
 
         # Определяем знак результата
         sign = "0" if self_straight.binary[0] == other_straight.binary[0] else "1"
 
-        
-        dividend_abs = self_straight.value
-        divisor_abs = other_straight.value
+        # Берем модули чисел (без знакового бита)
+        dividend_abs = (
+            int(self_straight.binary[1:], 2) if self_straight.binary[1:] else 0
+        )
+        divisor_abs = (
+            int(other_straight.binary[1:], 2) if other_straight.binary[1:] else 0
+        )
 
-        # Если делимое меньше делителя, результат 0
-        if abs(dividend_abs) < abs(divisor_abs):
-            return BinaryNumber(0, self.code_type)
+        # Целая часть
+        quotient_int = 0
+        remainder = dividend_abs
 
-        # Последовательное вычитание
-        quotient = 0
-        remainder_abs = abs(dividend_abs)
-        divisor_abs_val = abs(divisor_abs)
+        # Вычисляем целую часть
+        while remainder >= divisor_abs:
+            remainder -= divisor_abs
+            quotient_int += 1
 
-        print(f"\nДеление {dividend_abs} на {divisor_abs_val}:")
-        step = 1
+        # Дробная часть (5 бит)
+        fractional_bits = []
+        for _ in range(5):  # 5 бит точности
+            remainder *= 2
+            if remainder >= divisor_abs:
+                fractional_bits.append("1")
+                remainder -= divisor_abs
+            else:
+                fractional_bits.append("0")
 
-        while remainder_abs >= divisor_abs_val:
-            remainder_abs -= divisor_abs_val
-            quotient += 1
-            print(
-                f"  Шаг {step}: {remainder_abs + divisor_abs_val} - {divisor_abs_val} = {remainder_abs}, частное = {quotient}"
-            )
-            step += 1
+        # Формируем целую часть в двоичной строке (31 бит + 1 знаковый = 32 бита)
+        if quotient_int == 0:
+            int_binary_magnitude = "0" * 31
+        else:
+            int_binary_magnitude = bin(quotient_int)[2:].zfill(31)
 
-        # Применяем знак
-        if sign == "1":
-            quotient = -quotient
+        # Добавляем знак
+        int_binary_full = sign + int_binary_magnitude
 
-        print(f"Результат: {quotient}")
+        # Формируем дробную часть (32 бита)
+        # 5 бит точности + 27 нулей
+        frac_binary_full = "".join(fractional_bits) + "0" * 27
 
-        return BinaryNumber(quotient, self.code_type)
+        print(f"\nДеление {self_straight.binary} на {other_straight.binary}:")
+        print(f"  Делимое (модуль): {dividend_abs}")
+        print(f"  Делитель (модуль): {divisor_abs}")
+        print(f"  Целая часть: {quotient_int}")
+        print(f"  Целая часть (двоичная, 32 бита): {int_binary_full}")
+        print(f"  Дробная часть (двоичная, 32 бита): {frac_binary_full}")
+        print(
+            f"  Десятичное значение: {quotient_int + sum(int(b) * (1/2**(i+1)) for i, b in enumerate(fractional_bits))}"
+        )
+
+        # Создаем объекты BinaryNumber (в прямом коде)
+        int_part_binary = BinaryNumber(int_binary_full, "straight")
+        frac_part_binary = BinaryNumber(frac_binary_full, "straight")
+
+        return (int_part_binary, frac_part_binary)
+
+    # def __truediv__(self, other):
+    #     """
+    #     Деление методом последовательного вычитания
+    #     Возвращает целую часть от деления
+    #     """
+    #     if not isinstance(other, BinaryNumber):
+    #         other = BinaryNumber(other)
+
+    #     if other.value == 0:
+    #         raise ZeroDivisionError("Деление на ноль!")
+
+    #     self_straight = self.to_code("straight")
+    #     other_straight = other.to_code("straight")
+
+    #     # Определяем знак результата
+    #     sign = "0" if self_straight.binary[0] == other_straight.binary[0] else "1"
+
+    #     dividend_abs = self_straight
+    #     divisor_abs = other_straight
+
+    #     # Если делимое меньше делителя
+    #     if abs(dividend_abs) < abs(divisor_abs):
+    #         dividend_abs = dividend_abs * BinaryNumber("100000")
+    #         # divisor_abs = divisor_abs * BinaryNumber("100000")
+
+    #     # Последовательное вычитание
+    #     quotient = 0
+    #     remainder_abs = abs(dividend_abs)
+    #     divisor_abs_val = abs(divisor_abs)
+
+    #     print(f"\nДеление {dividend_abs} на {divisor_abs_val}:")
+    #     step = 1
+
+    #     while remainder_abs >= divisor_abs_val:
+    #         remainder_abs -= divisor_abs_val
+    #         quotient += 1
+    #         step += 1
+
+    #     # Применяем знак
+    #     if sign == "1":
+    #         quotient = -quotient
+
+    #     print(f"Результат: {quotient}")
+
+    #     return BinaryNumber(quotient, self.code_type)
 
     def __floordiv__(self, other):
         """Целочисленное деление"""
-        return (self / other).to_code("straight")
+        number, frac = self / other
+        return number.to_code("straight")
 
     def __mod__(self, other):
         """Остаток от деления"""
