@@ -103,7 +103,7 @@ class NormalForms:
     def get_index_form_binary(self) -> str:
         """Индексная форма в двоичном виде"""
         vector = self.tt.get_truth_vector_int()
-        return "".join(map(str, reversed(vector)))
+        return "".join(map(str,vector))
 
     def print_all(self):
         """Вывод всех форм"""
